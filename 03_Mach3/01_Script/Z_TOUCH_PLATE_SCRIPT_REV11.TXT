@@ -1,0 +1,209 @@
+'*************************************************************************************************************
+'*********************************** Z AXIS TOUCH PLATE SCRIPT FOR MACH3 *************************************
+'******FONT*************************     FOR BOTH INCH AND MM UNITS      *************************************
+'*********Courier*******************   CHARLIE SARSFIELD REV11 JAN/2018  *************************************
+'***********************************     WWW.YOUTUBE.COM/SUNNY5RISING    *************************************
+'***********************************         SUNNY5RISE@GMAIL.COM        *************************************
+'*************************************************************************************************************
+
+'----- USER VARIABLES FOR DISTANCES, FEED RATES, TOUCH PLATES, OPTIONS ---------------------------------------
+If GetParam("Units") = 0 Then
+ '* METRIC VALUES *
+ VarUnits = "  MM"
+ VarMaxDistance = -25.4		'MAX Z TRAVEL * ALWAYS MAKE NEGATIVE
+ VarFeedRate = 127		'MM/MIN DOWN FEEDRATE
+ VarStandOff = 1.27		'STANDOFF DISTANCE ABOVE PROBE CONTACT
+ VarTouchPlate = 20.066		'PRIMARY/DEFAULT TOUCH PLATE THICKNESS
+ VarSecondPlate = 0.038		'SECONDARY TOUCH PLATE THICKNESS * OPTION FOR CHOICE DIALOG
+ VarThirdPlate = 0.012		'TERTIARY TOUCH PLATE THICKNESS * OPTION FOR CHOICE DIALOG
+Else
+ '* SAE VALUES *
+ VarUnits = " INCH"
+ VarMaxDistance = -1.0		'MAX Z TRAVEL * ALWAYS MAKE NEGATIVE
+ VarFeedRate = 5		'INCH/MIN DOWN FEEDRATE 
+ VarStandOff = 0.05		'STANDOFF DISTANCE ABOVE PROBE CONTACT
+ VarTouchPlate = 0.79		'PRIMARY/DEFAULT TOUCH PLATE THICKNESS
+ VarSecondPlate = 0.0015	'SECONDARY TOUCH PLATE THICKNESS * OPTION FOR CHOICE DIALOG  
+ VarThirdPlate = 0.0005		'TERTIARY TOUCH PLATE THICKNESS * OPTION FOR CHOICE DIALOG
+End If
+
+VarRunTheChoice = 1		'RUN PLATE CHOICE DIALOG?  0=NO  1=YES 
+
+VarDelayInSec = 0		'DEFAULT SECONDS TO DELAY MOTION
+VarBeepOrSpeak = 2		'COUNTDOWN AUDIO: 0=NONE 1=BEEP 2=SPEAK 
+VarSecOfAudio = 5		'COUNTDOWN SECOND AT WHICH AUDIO BEGINS
+
+VarCompleteAudio = 3		'END SIGNAL: 0=NONE 1=BEEP 2=SPEAK 3=WAV_AUDIO_FILE
+VarWavAudioFile = "C:\MACH3\ToolCompleteSND1.wav" 'WAV_AUDIO_FILE LOCATION
+
+'*************************************************************************************************************
+'*************************************************************************************************************
+
+'----- GET INITIAL ENVIRONMENT SETTINGS FOR LATER REINSTATEMENT ----------------------------------------------
+VarInitialLinearMode = GetOemDRO(819)        'LINEAR MODE  G00/G01
+VarInitialDistMode = GetOemLED(48)           'DISTANCE MODE G90/G91    
+VarInitialFeedRate = GetOemDRO(818)          'FEEDRATE
+VarInitialInhibit = GetParam("ZInhibitOn")   'Z INHIBIT STATUS  OFF/ON
+VarInitialZScale = GetParam("ZScale")	     'Z SCALE VALUE
+VarInitialFRO = GetOemDRO(821)		     'FEEDRATE OVERRIDE PERCENTAGE
+Message ""			             'CLEAR STATUS LINE TEXT
+
+
+'----- CHECK DIGITIZE STATE; 0=CLEAR 1=ACTIVE ----------------------------------------------------------------
+If GetOemLED (825) <> 0 Then 
+ MachMsg("Digitize Status Not Clear. Check Probe/Connections And Try Again!","*** ERROR! ***",0)
+ End		'END SCRIPT
+End If
+
+
+'----- CHECK IF USER WANTS TO RUN PLATE CHOICE DIALOG --------------------------------------------------------
+If VarRunTheChoice = 1 Then RunTheThing 'RUN SUBROUTINE  
+
+
+'----- ACTIVATE TIME DELAY IF USED ---------------------------------------------------------------------------
+If VarDelayInSec <> 0 Then
+ Do Until VarDelayInSec = 0		'LOOP UNTIL SECONDS = ZERO 
+  Message VarDelayInSec			'DISPLAY SECONDS VALUE IN STATUS LINE
+   If VarDelayInSec < VarSecOfAudio + 1 Then
+	Select Case VarBeepOrSpeak	
+   	   Case 1 'OPTION BEEP
+   	    Beep
+   	   Case 2 'OPTION SPEAK 
+            Speak(VarDelayInSec)	
+        End Select
+   End If   
+  Sleep 1000 	  'PAUSE 1 SEC.
+  VarDelayInSec = VarDelayInSec - 1	'REDUCE SECONDS BY 1 AFTER EACH LOOP
+ Loop
+End If
+
+
+'----- PREPARE FOR MOVE ----- MOVE PROBE DOWN TOWARD CONTACT -------------------------------------------------
+SetParam("ZInhibitOn",0)	'TURN Z INHIBIT OFF
+SetParam("ZScale",1.0)		'SET Z SCALE TO 1.0
+DoOemButton(1014)		'CANCEL FEED OVERRIDE
+SetOemDRO(802,0)  		'ZERO Z AXIS DRO
+Sleep 200			'DELAY TO ALLOW DRO TO CHANGE
+Message "Auto Tool Zero Running..."
+Code "G90 G31 Z" &VarMaxDistance &"F" &VarFeedRate	'MOVE DOWN @ FEEDRATE 
+ While IsMoving()		'WAIT UNTIL MOVE IS COMPLETE BEFORE PROCEEDING
+ Wend
+
+
+'----- GET Z CONTACT POSITION AND TEST FOR MAX TRAVEL ------ MOVE TO STANDOFF ------ UPDATE Z AXIS DRO -------
+If GetVar(2002) <= VarMaxDistance + .001 Then   
+ MachMsg("Maximum Travel Reached. Reposition Z Axis Closer To Touch Plate And Try Again!","*** OOPS! ***",0)
+ Message ""
+ RETURNSTATE    'CALL REINSTATE SUBROUTINE
+ End		'END SCRIPT
+Else
+ Beep
+ Code "G90 G0 Z" &GetVar(2002)	'MOVE TO CONTACT POINT DUE TO OVERRUN
+  While IsMoving()
+  Wend
+ SetOemDRO(802,0)		'ZERO Z AXIS DRO
+ Sleep 200
+ Code "G90 G0 Z" &VarStandOff	'MOVE TO STANDOFF DISTANCE
+  While IsMoving ()
+  Wend
+ SetOemDRO(802, VarStandOff + VarTouchPlate)     'SET Z DRO (STANDOFF + PLATE THICKNESS)
+ Sleep 200
+  Select Case VarCompleteAudio
+    Case 1 'OPTION BEEP
+      Beep
+    Case 2 'OPTION SPEAK
+      Speak("Tool Zero Complete.")
+    Case 3 'OPTION WAV_AUDIO_FILE
+      PlayWave(VarWavAudioFile)
+  End Select
+ Message "Auto Tool Zero Complete! ***Remove Touch Plate***"
+End If
+RETURNSTATE     'CALL REINSTATE SUBROUTINE
+End		'END SCRIPT
+
+'******************************************* SUBROUTINES BELOW ***********************************************
+
+'----- SUBROUTINE TO RETURN INITIAL SETTINGS -----------------------------------------------------------------
+Sub RETURNSTATE
+ 'REINSTATE INITIAL FEEDRATE
+ Code "F" &VarInitialFeedRate
+ 
+ 'REINSTATE DISTANCE MODE  0=G91  -1=G90
+ If VarInitialDistMode = 0 Then Code "G91" Else Code "G90"
+
+ 'REINSTATE LINEAR MODE  0=G00  1=G01
+ If VarInitialLinearMode = 0 Then Code "G00" Else Code "G01"
+
+ 'REINSTATE Z INHIBIT STATUS 0=OFF 1=ON
+ If VarInitialInhibit = 1 Then SetParam("ZInhibitOn",1)
+  
+ 'SET Z SCALE TO INITIAL VALUE 
+ If VarInitialZScale <> 1.0 Then SetParam("ZScale",VarInitialZScale)
+
+ 'SET FEEDRATE OVERRIDE TO INITIAL VALUE 
+ If VarInitialFRO <> 100 Then SetOemDRO(821,VarInitialFRO)
+End Sub 
+
+
+'----- DIALOG SUBROUTINE FOR TOUCH PLATE CHOICE AND TIME DELAY -----------------------------------------------
+Sub RunTheThing		
+  Dim PlateList$ (2)	'DECLARE 3 ITEM ARRAY FOR PLATE SIZE LIST
+  If GetParam("Units") = 0 Then
+    'MM FORMATTING FOR LISTBOX
+	PlateList (0) = Format(VarTouchPlate,"00.000")	  'FILL ARRAY 1 
+	PlateList (1) = Format(VarSecondPlate,"00.000")   'FILL ARRAY 2
+	PlateList (2) = Format(VarThirdPlate,"00.000")	  'FILL ARRAY 3
+  Else
+    'INCH FORMATTING FOR LISTBOX
+	PlateList (0) = Format(VarTouchPlate,"0.0000")	  'FILL ARRAY 1
+	PlateList (1) = Format(VarSecondPlate,"0.0000")	  'FILL ARRAY 2
+	PlateList (2) = Format(VarThirdPlate,"0.0000")	  'FILL ARRAY 3
+  End If
+
+ Dim UnitList$ (0)	'DECLARE 1 ITEM ARRAY FOR UNIT LISTBOX
+	UnitList (0) = VarUnits	  'FILL ARRAY 1
+
+ 'SETUP DIALOG CONTROLS	
+ Begin Dialog PlateChoice 110,68,"Touch Plate"
+ 	ListBox 15,20,35,30, PlateList$(),.Lstbox2
+	ListBox 64,20,25,10, UnitList$(),.Listbox1
+ 	GroupBox 8,8,95,45,"Choose Plate Thickness",.GroupBox1
+	OKButton 57,34,37,12
+	Text 13,55,100,15, "Delay" 
+	TextBox 37,55,30,10, .SecText
+        Text 70,55,30,15, "Seconds"          
+ End Dialog
+
+ Dim Dlg1 As PlateChoice
+ Dlg1.SecText = VarDelayInSec	'FILL SECONDS TEXTBOX WITH DEFAULT VALUE
+
+  Button = Dialog (Dlg1)	'SHOW DIALOG AND WAIT FOR BUTTON REPLY
+
+  If Button = 0 Then	'IF CLOSE BUTTON
+   Message "Auto Tool Zero CANCELED"
+   End		'END SCRIPT
+  End If	
+
+  'CHECK THAT SECONDS WAS ENTERED NUMERIC
+  If IsNumeric(Dlg1.SecText) = True Then
+        VarDelayInSec = Int(Dlg1.SecText)
+  Else
+	MachMsg("*****  SECONDS MUST BE ENTERED IN NUMERIC FORMAT! *****", _
+	"  Substance Abuse Is Not Recommended  ",0)
+	RunTheThing	'RESTART SUB
+  End If
+ 
+ 'SET PLATE VARIABLE BASED ON PLATE CHOICE
+ PlateNum = Dlg1.Lstbox2
+ Select Case PlateNum
+      Case 0 'PRIMARY PLATE
+        'WILL USE PRIMARY/DEFAULT THICKNESS
+      Case 1 'SECONDARY PLATE
+      	VarTouchPlate = VarSecondPlate
+      Case 2 'TERTIARY PLATE
+        VarTouchPlate = VarThirdPlate
+ End Select
+End Sub
+
+'*************************************************************************************************************
+'*************************************************************************************************************          

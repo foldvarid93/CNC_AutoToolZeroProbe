@@ -1,0 +1,42 @@
+G28 X0 Y0 Z0 (gepi nulla pozicioba mozgas)
+M1(Varakozas szerszamcserere)
+T13M6 (szerszamcsere kesz:T13 szerszam hasznalatban)
+M1(Varakozas szerszam bemeresre)
+(G31)(szerszam merese)
+M1(szerszam bemeres kesz, varakozas inditasra)
+G17(Z tengely, xy sik kivalasztasa)
+S10000M3(Maromotor felporgetese)
+M1(Maromotor forog? Maras inditasa)
+
+(Maras T13-mal kezdes)
+G0X0.000Y0.000(x0,y0)
+G0Z-10.000H13(z-10)
+G0X100.000Y100.000Z-50.000
+G0X150.000Y50.000Z-100.000
+(Maras T13-mal vege)
+
+(Szerszamcsere kezdete)
+G28 Z0 (kiemeles, home z)
+M5 (maromotor leallitas)
+G28 X0 Y0 (home pozicioba mozgas xy)
+M1 (varakozas a kezelőre)
+T12M06 (szerszam csere)
+M1(szerszam csere kesz?)
+(G31)(szerszam bemerese)
+M1(szerszam bemerese kesz?)
+S11000M3 (maromotor inditasa)
+M1(Maromotor forog?)
+(szerszamcsere vege)
+
+(Maras T12-vel kezdes)
+G43H12()
+G0X0.000Y0.000()
+G0X100.000Y100.000Z-5.000
+G0X150.000Y50.000Z-100.000
+(Maras T12-vel vege)
+
+(vege)
+G28 Z0 (kiemeles, home z)
+M5 (maromotor leallitas)
+G28(home)
+M30(vege, ugyanaz mint az M30)

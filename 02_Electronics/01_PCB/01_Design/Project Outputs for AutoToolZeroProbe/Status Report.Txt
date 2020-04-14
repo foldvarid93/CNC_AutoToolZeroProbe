@@ -1,0 +1,18 @@
+Output: Gerber X2 Files
+Type  : GerberX2
+From  : Project [AutoToolZeroProbe.PrjPcb]
+   Generated File[AutoToolZeroProbe_Copper_Signal_Bot.gbr]
+   Generated File[AutoToolZeroProbe_Mechanical_2.gbr]
+   Generated File[AutoToolZeroProbe_NPTH_Drill.gbr]
+   Generated File[AutoToolZeroProbe_PTH_Drill.gbr]
+   Generated File[AutoToolZeroProbe_Drawing_1.gbr]
+   Generated File[AutoToolZeroProbe_Drillmap_1.gbr]
+   Generated File[AutoToolZeroProbe.RUL]
+   Generated File[AutoToolZeroProbe.EXTREP]
+   Generated File[AutoToolZeroProbe.REP]
+
+
+Files Generated   : 9
+Documents Printed : 0
+
+Finished Output Generation At 9:25:02 On 2020. 04. 13.

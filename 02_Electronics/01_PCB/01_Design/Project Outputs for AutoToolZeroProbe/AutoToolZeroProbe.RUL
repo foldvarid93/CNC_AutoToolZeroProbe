@@ -1,0 +1,10 @@
+DRC Rules Export File for PCB: D:\CNC\AutoToolZeroProbe\02_Electronics\01_PCB\01_Design\AutoToolZeroProbe.PcbDoc
+RuleKind=MinimumAnnularRing|RuleName=ViaOutsideLayers_small|Scope=Board|Minimum=8.86
+RuleKind=MinimumAnnularRing|RuleName=ViaOutsideLayers_large|Scope=Board|Minimum=9.84
+RuleKind=MinimumAnnularRing|RuleName=PadOutsideLayers_small|Scope=Board|Minimum=8.86
+RuleKind=MinimumAnnularRing|RuleName=PadOutsideLayers_large|Scope=Board|Minimum=9.84
+RuleKind=ShortCircuit|RuleName=ShortCircuit|Scope=Board|Allowed=0
+RuleKind=SolderMaskExpansion|RuleName=SolderMaskExpansion|Scope=Board|Minimum=0.00
+RuleKind=Width|RuleName=Width|Scope=Board|Minimum=5.91
+RuleKind=Clearance|RuleName=Clearance|Scope=Board|Minimum=7.87
+RuleKind=Clearance|RuleName=Top_GND_Polly|Scope=Board|Minimum=9.84

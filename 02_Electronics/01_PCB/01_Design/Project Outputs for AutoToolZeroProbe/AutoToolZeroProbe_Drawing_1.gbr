@@ -1,0 +1,28 @@
+%TF.GenerationSoftware,Altium Limited,Altium Designer,19.1.5 (86)*%
+G04 Layer_Color=2752767*
+%FSLAX43Y43*%
+%MOMM*%
+%TF.FileFunction,Drawing*%
+%TF.Part,Single*%
+G01*
+G75*
+%TA.AperFunction,NonConductor*%
+%ADD25C,0.127*%
+%ADD26C,0.169*%
+D25*
+X-508Y-508D02*
+Y508D01*
+X508D01*
+Y-508D01*
+X-508D01*
+D26*
+X-16867Y0D02*
+G03*
+X-16867Y0I-508J0D01*
+G01*
+X17883D02*
+G03*
+X17883Y0I-508J0D01*
+G01*
+%TF.MD5,c691611b0ff94d2fd61d0c236ad29252*%
+M02*
